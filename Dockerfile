@@ -17,18 +17,18 @@ RUN apk update && \
     mkdir -p /tmp/unrar && \
     curl -o \
     /tmp/unrar.tar.gz -L \
-    "https://www.rarlab.com/rar/unrarsrc-${UNRAR_VERSION}.tar.gz" && \  
+    "https://www.rarlab.com/rar/unrarsrc-${UNRAR_VERSION}.tar.gz" && \
     tar xf \
         /tmp/unrar.tar.gz -C \
         /tmp/unrar --strip-components=1 && \
     cd /tmp/unrar && \
-    make 
+    make
 
 
-FROM emmercm/libtorrent:2.0.11-alpine
+FROM emmercm/libtorrent:2.0.15-alpine
 
 LABEL name="docker-deluge" \
-    maintainer="Jee jee@eer.fr" \
+    maintainer="DirectorX" \
     description="Deluge is a lightweight, Free Software, cross-platform BitTorrent client." \
     url="https://deluge-torrent.org/" \
     org.label-schema.vcs-url="https://github.com/DirectorX/docker-deluge" \
@@ -62,6 +62,7 @@ RUN apk update && \
         linux-headers \
         musl-dev \
         cargo \
+        py3-pip \
         python3-dev && \
     apk add --no-cache --virtual=deluge-dependencies --upgrade \
         py3-chardet \
@@ -75,10 +76,12 @@ RUN apk update && \
         py3-setproctitle \
         py3-setuptools \
         py3-twisted \
-        py3-wheel \	
+        py3-wheel \
         py3-xdg \
         py3-six \
         py3-zope-interface && \
+    # Deluge 2.2.0 plugins still require pkg_resources, removed in setuptools 81.
+    python3 -m pip install --no-cache-dir --break-system-packages --ignore-installed 'setuptools==80.9.0' && \
     install -v -m755 /tmp/unrar /usr/local/bin && \
     git clone -b "${DELUGE_BRANCH}" https://github.com/deluge-torrent/deluge.git /tmp/deluge && \
     cd /tmp/deluge && \
