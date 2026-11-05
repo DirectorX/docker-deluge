@@ -1,4 +1,4 @@
-ARG UNRAR_VERSION=6.1.5
+ARG UNRAR_VERSION=7.2.7
 ARG DELUGE_BRANCH=deluge-2.2.0
 
 FROM alpine:3.22 AS unrar-builder
