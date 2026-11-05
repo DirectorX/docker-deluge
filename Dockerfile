@@ -80,7 +80,7 @@ RUN apk update && \
         py3-six \
         py3-zope-interface && \
     install -v -m755 /tmp/unrar /usr/local/bin && \
-    git clone -b "${DELUGE_BRANCH}" git://deluge-torrent.org/deluge.git /tmp/deluge && \
+    git clone -b "${DELUGE_BRANCH}" https://github.com/deluge-torrent/deluge.git /tmp/deluge && \
     cd /tmp/deluge && \
     python3 setup.py clean -a && \
     python3 setup.py build && \
