@@ -1,16 +1,18 @@
 # docker-deluge
 
-[![Docker Image Size (latest by date)](https://img.shields.io/docker/image-size/j33r/deluge?style=flat-square)](https://microbadger.com/images/j33r/deluge)
-![GitHub Workflow Status (branch)](https://img.shields.io/github/actions/workflow/status/jee-r/docker-deluge/deploy.yaml?branch=main&style=flat-square)
-[![Docker Pulls](https://img.shields.io/docker/pulls/j33r/deluge?style=flat-square)](https://hub.docker.com/r/j33r/deluge)
-[![DockerHub](https://img.shields.io/badge/Dockerhub-j33r/deluge-%232496ED?logo=docker&style=flat-square)](https://hub.docker.com/r/j33r/deluge)
-[![ghcr.io](https://img.shields.io/badge/ghrc%2Eio-jee%2D-r/deluge-%232496ED?logo=github&style=flat-square)](https://ghcr.io/jee-r/deluge)
+![GitHub Workflow Status (branch)](https://img.shields.io/github/actions/workflow/status/DirectorX/docker-deluge/deploy.yaml?branch=main&style=flat-square)
+[![GHCR](https://img.shields.io/badge/ghcr.io-directorx%2Fdeluge-24292e?logo=github&style=flat-square)](https://github.com/DirectorX/docker-deluge/pkgs/container/deluge)
 
 A docker image for the torrent client [Deluge](https://deluge-torrent.org/) ![deluge's logo](https://user-images.githubusercontent.com/10530469/79228210-5ae36180-7e61-11ea-8f72-276e6197f011.png) based on @emmercm [libtorrent image](https://github.com/emmercm/docker-libtorrent.git). 
 
+Images are published exclusively to GitHub Container Registry at
+`ghcr.io/directorx/deluge`. The default branch publishes `latest`; builds also
+publish branch and short commit SHA tags. Publishing uses the built-in
+`GITHUB_TOKEN`; no Docker Hub credentials are required.
+
 ## What is Deluge?
 
-From [deluge.org](https://www.qbittorrent.org/):
+From [deluge-torrent.org](https://deluge-torrent.org/):
 
 >  Deluge is a fully-featured cross-platform ​BitTorrent client. It is ​Free Software, licensed under the ​GNU GPLv3+ and adheres to ​freedesktop standards enabling it to work across many desktop environments.
 
@@ -31,7 +33,7 @@ docker run \
     #--env LOGLEVEL=info \
     --publish 8112:8112 \
     --publish 58846:58846 \
-    ghcr.io/jee-r/deluge:latest
+    ghcr.io/directorx/deluge:latest
 ```    
 
 And accessed through the web UI at [http://localhost:8112](http://localhost:8112) with the [default](https://dev.deluge-torrent.org/wiki/UserGuide/Authentication) username `localclient` and password `deluge`.
@@ -63,7 +65,7 @@ docker run \
     #--env LOGLEVEL=info \
     --publish 8112:8112 \
     --publish 58846:58846 \
-    ghcr.io/jee-r/deluge:latest
+    ghcr.io/directorx/deluge:latest
 ```
 
 You should create directory before run the container otherwise directories are created by the docker deamon and owned by the root user
@@ -83,7 +85,7 @@ Here's an example `docker-compose.yml` config:
 version: "3"
 services:
   deluge:
-    image: ghcr.io/jee-r/deluge:latest
+    image: ghcr.io/directorx/deluge:latest
     container_name: deluge
     restart: unless-stopped
     user: 1000:1000

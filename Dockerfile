@@ -31,8 +31,8 @@ LABEL name="docker-deluge" \
     maintainer="Jee jee@eer.fr" \
     description="Deluge is a lightweight, Free Software, cross-platform BitTorrent client." \
     url="https://deluge-torrent.org/" \
-    org.label-schema.vcs-url="https://github.com/jee-r/docker-deluge" \
-    org.opencontainers.image.source="https://github.com/jee-r/docker-deluge"
+    org.label-schema.vcs-url="https://github.com/DirectorX/docker-deluge" \
+    org.opencontainers.image.source="https://github.com/DirectorX/docker-deluge"
 
 COPY rootfs /
 COPY --from=unrar-builder /tmp/unrar/unrar /tmp/unrar
