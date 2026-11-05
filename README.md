@@ -5,10 +5,8 @@
 
 A docker image for the torrent client [Deluge](https://deluge-torrent.org/) ![deluge's logo](https://user-images.githubusercontent.com/10530469/79228210-5ae36180-7e61-11ea-8f72-276e6197f011.png) based on @emmercm [libtorrent image](https://github.com/emmercm/docker-libtorrent.git). 
 
-Images are published exclusively to GitHub Container Registry at
-`ghcr.io/directorx/deluge`. The default branch publishes `latest`; builds also
-publish branch and short commit SHA tags. Publishing uses the built-in
-`GITHUB_TOKEN`; no Docker Hub credentials are required.
+Use `ghcr.io/directorx/deluge:latest` or pin a Deluge version, e.g.
+`ghcr.io/directorx/deluge:2.2.0`. New releases are checked daily.
 
 ## What is Deluge?
 

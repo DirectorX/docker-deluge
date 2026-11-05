@@ -1,19 +1,26 @@
 name: Deploy
 
 concurrency:
-  group: deploy-${{ github.ref }}
+  group: deploy-${{ github.ref }}-${{ inputs.deluge_version || 'default' }}
   cancel-in-progress: true
 
 on:
   workflow_dispatch:
+    inputs:
+      deluge_version:
+        description: 'Stable Deluge version'
+        required: false
+        type: string
   push:
     branches:
       - main
       - dev
     paths-ignore:
       - '**.md'
+  # GitHub cannot subscribe directly to releases in another repository.
+  # Poll PyPI daily and build the latest stable upstream source tag.
   schedule:
-    - cron: '33 3 * * 1'
+    - cron: '33 3 * * *'
 
 permissions:
   contents: read
@@ -21,27 +28,45 @@ permissions:
 
 jobs:
   build:
-    name: Build, tag, and publish Docker image
+    name: Build, test, and publish Docker image
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+      - name: Test version selection
+        run: python3 -m unittest discover -s tests -v
+      - name: Resolve Deluge release
+        id: release
+        env:
+          DELUGE_VERSION: ${{ inputs.deluge_version }}
+        run: python3 scripts/resolve_deluge_version.py
       - name: Set image name and tags
         env:
           REPOSITORY: ${{ github.repository }}
           BRANCH: ${{ github.ref_name }}
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          DELUGE_VERSION: ${{ steps.release.outputs.version }}
+          IS_LATEST: ${{ steps.release.outputs.is_latest }}
+          REQUESTED_VERSION: ${{ inputs.deluge_version }}
         run: |
           owner="${REPOSITORY%%/*}"
           name="${REPOSITORY#*/}"
           image="ghcr.io/${owner,,}/${name#docker-}"
           image="${image,,}"
+          branch_tag="$(printf '%s' "$BRANCH" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9_.-]/-/g')"
           {
             echo 'IMAGE_TAGS<<EOF'
+            echo "${image}:${DELUGE_VERSION}-${GITHUB_SHA:0:8}"
             echo "${image}:${GITHUB_SHA:0:8}"
-            echo "${image}:${BRANCH}"
+            # Historical manual builds must not replace current branch aliases.
+            if [[ -z "$REQUESTED_VERSION" ]]; then
+              echo "${image}:${branch_tag}"
+            fi
             if [[ "$BRANCH" == "$DEFAULT_BRANCH" ]]; then
-              echo "${image}:latest"
+              echo "${image}:${DELUGE_VERSION}"
+              if [[ "$IS_LATEST" == true ]]; then
+                echo "${image}:latest"
+              fi
             fi
             echo 'EOF'
           } >> "$GITHUB_ENV"
@@ -53,11 +78,16 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Build and Push
+      - name: Build and push image
         uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile
           platforms: linux/amd64
           push: true
+          build-args: |
+            DELUGE_BRANCH=deluge-${{ steps.release.outputs.version }}
+          labels: |
+            org.opencontainers.image.version=${{ steps.release.outputs.version }}
+            org.opencontainers.image.revision=${{ github.sha }}
           tags: ${{ env.IMAGE_TAGS }}
