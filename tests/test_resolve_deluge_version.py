@@ -1,6 +1,6 @@
 import unittest
 
-from scripts.resolve_deluge_version import resolve_version
+from scripts.resolve_deluge_version import pin_version, resolve_version
 
 
 class ResolveVersionTests(unittest.TestCase):
@@ -37,6 +37,29 @@ class ResolveVersionTests(unittest.TestCase):
     def test_requires_pinned_dockerfile(self):
         with self.assertRaises(ValueError):
             resolve_version("ARG DELUGE_BRANCH=master\n", "2.3.0")
+
+
+class PinVersionTests(unittest.TestCase):
+    dockerfile = "ARG UNRAR_VERSION=7.2.7\nARG DELUGE_BRANCH=deluge-2.2.0\n"
+
+    def test_updates_only_deluge_pin(self):
+        self.assertEqual(
+            pin_version(self.dockerfile, "2.3.0"),
+            "ARG UNRAR_VERSION=7.2.7\nARG DELUGE_BRANCH=deluge-2.3.0\n",
+        )
+
+    def test_unchanged_version_is_noop(self):
+        self.assertEqual(pin_version(self.dockerfile, "2.2.0"), self.dockerfile)
+
+    def test_rejects_invalid_versions(self):
+        for version in ("master", "2.3.0rc1", "2.3.0\nRUN bad"):
+            with self.subTest(version=version), self.assertRaises(ValueError):
+                pin_version(self.dockerfile, version)
+
+    def test_rejects_missing_or_duplicate_pin(self):
+        for dockerfile in ("FROM alpine:3.24\n", self.dockerfile * 2):
+            with self.subTest(dockerfile=dockerfile), self.assertRaises(ValueError):
+                pin_version(dockerfile, "2.3.0")
 
 
 if __name__ == "__main__":

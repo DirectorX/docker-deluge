@@ -30,6 +30,8 @@ jobs:
   build:
     name: Build, test, and publish Docker image
     runs-on: ubuntu-latest
+    outputs:
+      deluge_version: ${{ steps.release.outputs.version }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -95,3 +97,35 @@ jobs:
             org.opencontainers.image.version=${{ steps.release.outputs.version }}
             org.opencontainers.image.revision=${{ github.sha }}
           tags: ${{ env.IMAGE_TAGS }}
+
+  sync-version:
+    name: Sync published Deluge version
+    needs: build
+    if: github.event_name == 'schedule' && github.ref_name == github.event.repository.default_branch
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout built revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - name: Update Dockerfile pin
+        env:
+          DELUGE_VERSION: ${{ needs.build.outputs.deluge_version }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          remote_sha="$(git ls-remote --exit-code origin "refs/heads/$DEFAULT_BRANCH" | cut -f1)"
+          if [[ "$remote_sha" != "$GITHUB_SHA" ]]; then
+            echo 'Branch changed during build; leaving Dockerfile for next scheduled run.'
+            exit 0
+          fi
+          python3 scripts/resolve_deluge_version.py --pin "$DELUGE_VERSION"
+          if git diff --quiet -- Dockerfile; then
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add Dockerfile
+          git commit -m "build: pin Deluge to published release $DELUGE_VERSION"
+          git push origin "HEAD:refs/heads/$DEFAULT_BRANCH"

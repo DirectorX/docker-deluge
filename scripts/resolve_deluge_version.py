@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-"""Select a stable Deluge release for CI without changing the Dockerfile default."""
+"""Select stable Deluge releases and sync the Dockerfile pin after publishing."""
 
+import argparse
 import json
 import os
 from pathlib import Path
@@ -24,7 +25,29 @@ def resolve_version(dockerfile, latest_version, requested_version="", scheduled=
     return version
 
 
+def pin_version(dockerfile, version):
+    if not STABLE_VERSION.fullmatch(version):
+        raise ValueError(f"Invalid stable version: {version!r}")
+    updated, count = re.subn(
+        r"^ARG DELUGE_BRANCH=deluge-[0-9]+\.[0-9]+\.[0-9]+$",
+        f"ARG DELUGE_BRANCH=deluge-{version}",
+        dockerfile,
+        flags=re.MULTILINE,
+    )
+    if count != 1:
+        raise ValueError("Expected exactly one pinned DELUGE_BRANCH in Dockerfile")
+    return updated
+
+
 def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--pin", metavar="VERSION", help="Update Dockerfile without querying upstream")
+    args = parser.parse_args()
+    if args.pin is not None:
+        path = Path("Dockerfile")
+        path.write_text(pin_version(path.read_text(), args.pin))
+        return
+
     request = urllib.request.Request(
         "https://pypi.org/pypi/deluge/json",
         headers={"User-Agent": "docker-deluge-release-build"},
