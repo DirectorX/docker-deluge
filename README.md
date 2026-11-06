@@ -17,24 +17,26 @@ From [deluge-torrent.org](https://deluge-torrent.org/):
 
 ## How to use these images
 
-The images do not require any external Docker networks, volumes, environment variables, or arguments and can be run with just:
+Quick start (configuration and downloads are not persisted in this example):
 
 ```bash
 docker run \
     --detach \
     --interactive \
     --name deluge \
-    --user $(id -u):$(id -g) \
-    --volume /etc/localtime:/etc/localtime:ro \ # optional to sync time with the host
+    --user "$(id -u):$(id -g)" \
     --env UMASK_SET=022 \
     --env TZ=Europe/Paris \
-    #--env LOGLEVEL=info \
-    --publish 8112:8112 \
-    --publish 58846:58846 \
+    --publish 127.0.0.1:8112:8112 \
+    --publish 127.0.0.1:58846:58846 \
     ghcr.io/directorx/deluge:latest
 ```    
 
-And accessed through the web UI at [http://localhost:8112](http://localhost:8112) with the [default](https://dev.deluge-torrent.org/wiki/UserGuide/Authentication) username `localclient` and password `deluge`.
+Access the web UI at [http://localhost:8112](http://localhost:8112) with default password `deluge` (no username). Change it immediately in Preferences → Interface.
+
+Examples bind management ports to localhost. For remote access, use an authenticated VPN or a TLS reverse proxy; do not expose default credentials publicly. `localclient` is a daemon authentication user, not a web UI username.
+
+Optional settings: mount `/etc/localtime:/etc/localtime:ro` to share host time settings, or set `LOGLEVEL=debug` for troubleshooting.
 
 You can also access through the [Gtk client](https://dev.deluge-torrent.org/wiki/UserGuide/ThinClient) on `localhost` port `58846` for this you will need to set `allow_remote` to `true` in the `config/core.conf` file and [add a new user](https://dev.deluge-torrent.org/wiki/UserGuide/Authentication) `myuser:mypassword:10` in the `config/auth` file.
 
@@ -45,24 +47,24 @@ You can also access through the [Gtk client](https://dev.deluge-torrent.org/wiki
 Due to the ephemeral nature of Docker containers these images provide a number of optional volume mounts to persist data outside of the container:
 
 - `/config`: the Deluge config directory containing `core.conf`
-- `/torrents/seed`: the default download location
-- `/torrents/leech`: the default incomplete download location
-- `/torrents/.watch`: the default autoadd torrent location
+- `/torrents`: an optional download directory; configure Deluge's download path as `/torrents` in Preferences → Downloads. This image does not override Deluge's download defaults.
+
+If using separate completed, incomplete, or watch directories, create them under `/torrents` and configure the corresponding Deluge preferences/plugins.
 
 ```bash
+mkdir -p "${HOME}/deluge/config" "${HOME}/deluge/torrents"
 docker run \
     --detach \
     --interactive \
     --name deluge \
-    --user $(id -u):$(id -g) \
-    --volume ${HOME}/deluge/torrents:/torrents \
-    --volume ${HOME}/deluge/config:/config \
+    --user "$(id -u):$(id -g)" \
+    --volume "${HOME}/deluge/torrents:/torrents" \
+    --volume "${HOME}/deluge/config:/config" \
     --volume /etc/localtime:/etc/localtime:ro \
     --env UMASK_SET=022 \
     --env TZ=Europe/Paris \
-    #--env LOGLEVEL=info \
-    --publish 8112:8112 \
-    --publish 58846:58846 \
+    --publish 127.0.0.1:8112:8112 \
+    --publish 127.0.0.1:58846:58846 \
     ghcr.io/directorx/deluge:latest
 ```
 
@@ -70,6 +72,7 @@ You should create directory before run the container otherwise directories are c
 
 ### Environment variables
 
+- `UMASK_SET`: File creation mask (default: `002`; examples use `022`).
 - `LOGLEVEL`: Set the log level: none, info, warning, error, debug (default: info)
 - `TZ`: To change the timezone of the container. The full list of available options can be found on [Wikipedia](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones).
 
@@ -80,7 +83,6 @@ You should create directory before run the container otherwise directories are c
 Here's an example `docker-compose.yml` config:
 
 ```yaml
-version: "3"
 services:
   deluge:
     image: ghcr.io/directorx/deluge:latest
@@ -92,13 +94,25 @@ services:
       - TZ=Europe/Paris
       #- LOGLEVEL=info
     ports:
-      - 8112:8112
-      - 58846:58846
+      - "127.0.0.1:8112:8112"
+      - "127.0.0.1:58846:58846"
     volumes:
       - ./config:/config
       - ./torrents:/torrents
       - /etc/localtime:/etc/localtime:ro
 ```
+
+Before starting Compose, create `config` and `torrents` and ensure UID/GID `1000:1000` can write to both (or change `user` to match your host user). Set the download path to `/torrents` after first login. Torrent peer traffic may require additional TCP/UDP port mappings matching your Deluge incoming-port settings.
+
+## Tests
+
+```bash
+python3 -m unittest discover -s tests -v
+docker build -t deluge:smoke .
+bash scripts/smoke_test.sh deluge:smoke
+```
+
+PR builds run smoke tests on amd64 and arm64. Publishing requires an amd64 smoke test covering non-root startup, HTTP, healthcheck, graceful shutdown, persistence, and restart.
 
 ## Contributing :
 

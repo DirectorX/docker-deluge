@@ -98,7 +98,7 @@ WORKDIR /config
 
 VOLUME ["/config"]
 
-HEALTHCHECK --interval=5m --timeout=3s --start-period=30s \
+HEALTHCHECK --interval=5m --timeout=10s --start-period=30s \
     CMD /usr/local/bin/healthcheck.sh 58846 8112
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

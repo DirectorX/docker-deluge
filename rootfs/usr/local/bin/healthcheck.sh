@@ -1,18 +1,21 @@
 #!/bin/sh
 
-DEAMON_PORT="$1"
-WEB_PORT="$2"
+exec python3 - "${1:-58846}" "${2:-8112}" <<'PY'
+import socket
+import sys
+import urllib.error
+import urllib.request
 
-if [ "$(netstat -plnt | grep -c $DEAMON_PORT)" -eq 1 ]; then
-   echo "Deluge daemon [$DEAMON_PORT] : OK"
-else
-  echo "Deluge daemon [$DEAMON_PORT] : NOK"
-  exit 1
-fi
-
-if [ "$(netstat -plnt | grep -c $WEB_PORT)" -eq 1 ]; then
-   echo "Deluge daemon [$WEB_PORT] : OK"
-else
-  echo "Deluge daemon [$WEB_PORT] : NOK"
-fi
-exit 0
+try:
+    with socket.create_connection(("127.0.0.1", int(sys.argv[1])), timeout=2):
+        pass
+    # Ignore proxy environment variables for container-local checks.
+    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+    with opener.open(f"http://127.0.0.1:{int(sys.argv[2])}/", timeout=2) as response:
+        if response.status != 200:
+            raise ValueError(f"Unexpected web status: {response.status}")
+except (OSError, ValueError, urllib.error.URLError) as error:
+    print(f"Deluge healthcheck failed: {error}", file=sys.stderr)
+    sys.exit(1)
+print("Deluge daemon and web UI: OK")
+PY
