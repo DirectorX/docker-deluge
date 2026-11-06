@@ -110,9 +110,20 @@ Before starting Compose, create `config` and `torrents` and ensure UID/GID `1000
 python3 -m unittest discover -s tests -v
 docker build -t deluge:smoke .
 bash scripts/smoke_test.sh deluge:smoke
+bash scripts/scan_image.sh deluge:smoke
 ```
 
 PR builds run smoke tests on amd64 and arm64. Publishing requires an amd64 smoke test covering non-root startup, HTTP, healthcheck, graceful shutdown, persistence, and restart.
+
+## Build security
+
+Base images and the Trivy scanner use multi-platform digest pins; GitHub Actions use commit SHA pins. Renovate maintains base-image and action pins. Update the Trivy version and digest together in `scripts/scan_image.sh`.
+
+UnRAR source is checked against `UNRAR_SHA256` before extraction. When changing `UNRAR_VERSION`, fetch the matching archive from the official HTTPS URL, verify its provenance, and update the checksum too. The current checksum was computed from that archive; it is not an upstream signature verification.
+
+CI blocks on HIGH/CRITICAL vulnerabilities with available fixes, plus scanner/database errors. Unfixed vulnerabilities are excluded from this gate, not considered safe. PRs scan both architectures; publishing scans amd64 before the multi-architecture push.
+
+These controls do not make builds fully reproducible: Alpine packages, PyPI dependencies, and Deluge source tags remain external moving inputs.
 
 ## Contributing :
 

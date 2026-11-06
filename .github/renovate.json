@@ -1,7 +1,11 @@
 {
   "extends": [
-    "config:base"
+    "config:recommended",
+    "helpers:pinGitHubActionDigests"
   ],
+  "docker": {
+    "pinDigests": true
+  },
   "packageRules": [
     {
       "matchUpdateTypes": ["patch", "minor"],

@@ -1,9 +1,12 @@
 ARG UNRAR_VERSION=7.2.7
+# SHA-256 of the versioned source archive fetched from rarlab.com over HTTPS.
+ARG UNRAR_SHA256=01d903a7dcf413cb2925696d7796e48e38d471f79bfe7ef3ad2aebf6c12dbefd
 ARG DELUGE_BRANCH=deluge-2.2.0
 
-FROM alpine:3.24 AS unrar-builder
+FROM alpine:3.24@sha256:3f4d6b32e26703c6082839234f43769d5046b3ac7c910033911d1e71d8cd630a AS unrar-builder
 
 ARG UNRAR_VERSION
+ARG UNRAR_SHA256
 
 WORKDIR /tmp
 
@@ -15,9 +18,10 @@ RUN apk update && \
         make \
         g++ && \
     mkdir -p /tmp/unrar && \
-    curl -o \
+    curl --fail --silent --show-error -o \
     /tmp/unrar.tar.gz -L \
     "https://www.rarlab.com/rar/unrarsrc-${UNRAR_VERSION}.tar.gz" && \
+    echo "${UNRAR_SHA256}  /tmp/unrar.tar.gz" | sha256sum -c - && \
     tar xf \
         /tmp/unrar.tar.gz -C \
         /tmp/unrar --strip-components=1 && \
@@ -25,7 +29,7 @@ RUN apk update && \
     make
 
 
-FROM emmercm/libtorrent:2.0.15-alpine
+FROM emmercm/libtorrent:2.0.15-alpine@sha256:68c6e62adbd8237ed70daf4004f4400ad840cac174f9d17f3e38eabfb54d2083
 
 LABEL name="docker-deluge" \
     maintainer="DirectorX" \
