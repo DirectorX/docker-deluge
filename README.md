@@ -114,8 +114,7 @@ the issues**
 
 ### Questions
 
-We would like to have discussions and general queries related to this repository.
-you can reach me on [Libera irc server](https://libera.chat/) `/query jee`
+For questions, open an [issue](https://github.com/DirectorX/docker-deluge/issues).
 
 ### Pull requests
 
@@ -130,7 +129,7 @@ Before submitting a pull request, ensure that you go through the following:
 
 ## License
 
-This project is under the [GNU Generic Public License v3](https://github.com/jee-r/docker-deluge/blob/master/LICENSE) to allow free use while ensuring it stays open.
+This project is under the [GNU Generic Public License v3](https://github.com/DirectorX/docker-deluge/blob/main/LICENSE) to allow free use while ensuring it stays open.
 
 ## Credit
 
