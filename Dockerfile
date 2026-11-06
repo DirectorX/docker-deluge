@@ -63,6 +63,7 @@ RUN apk update && \
         musl-dev \
         cargo \
         py3-pip \
+        py3-rjsmin \
         python3-dev && \
     apk add --no-cache --virtual=deluge-dependencies --upgrade \
         py3-chardet \
@@ -87,6 +88,8 @@ RUN apk update && \
     cd /tmp/deluge && \
     python3 setup.py clean -a && \
     python3 setup.py build && \
+    test -s deluge/ui/web/js/deluge-all.js && \
+    test -s deluge/ui/web/js/extjs/ext-extensions.js && \
     python3 setup.py install && \
     apk del --purge build-dependencies && \
     rm -rf /tmp/*
